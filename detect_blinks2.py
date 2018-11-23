@@ -6,7 +6,7 @@ from scipy.spatial import distance
 import os
 from imutils import face_utils
 from sklearn import svm
-from sklearn.externals import joblib
+#from sklearn.externals import joblib
 import imutils
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
@@ -15,6 +15,10 @@ from skimage.feature import hog
 import joblib
 
 
+#TODO: 综合CNN这一块的和SVM,SVM加语料，EAR准确性。
+
+
+#close 0,open 1
 VECTOR_SIZE = 3
 def queue_in(queue, data):
     ret = None
@@ -46,11 +50,13 @@ predictor = dlib.shape_predictor(shape_detector_path)
 # 导入模型
 clf = joblib.load("ear_svm.m")
 
+clf2=joblib.load("single_eyes.m")
+
 EYE_AR_THRESH = 0.3# EAR阈值
 EYE_AR_CONSEC_FRAMES = 3# 当EAR小于阈值时，接连多少帧一定发生眨眼动作
 
 
-
+text =' '
 frame_counter = 0
 blink_counter = 0
 ear_vector = []
@@ -79,7 +85,7 @@ while(1):
         print('leftEAR = {0}'.format(leftEAR))
         print('rightEAR = {0}'.format(rightEAR))
 
-        ear = (leftEAR + rightEAR) / 2.0
+        ear = (leftEAR+rightEAR)/2.0
 
         leftEyeHull = cv2.convexHull(leftEye)
         #print(leftEyeHull)
@@ -107,32 +113,39 @@ while(1):
         result = clf.predict(test)
         print('result of leftEye is ')
         print(result)
-        if result ==0:
+        #if result ==0:
+            #text ='close'
+            #cv2.putText(frame, "leftEye:close", (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
+        #else:
+            #text = 'open'
 
-            cv2.putText(frame, "leftEye:close", (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
-        else:
-            cv2.putText(frame, "leftEye:Open", (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
+        #cv2.putText(frame, 'leftEye: '+text, (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
         cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1)
         cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
 
         ret, ear_vector = queue_in(ear_vector, ear)
+        
         if(len(ear_vector) == VECTOR_SIZE):
-            #print(ear_vector)
-            #input_vector = []
-            #input_vector.append(ear_vector)
-            #print(res)
+            print(ear_vector)
+            input_vector = []
+            input_vector.append(ear_vector)
+            res=clf2.predict(input_vector)
+            print('res is ')
+            print(res)
 
-            if result == 1:
+            if result == 0 or res ==0:
                 frame_counter += 1
+                text ='close'
             else:
+                text ='open'
                 if frame_counter >= EYE_AR_CONSEC_FRAMES:
                     blink_counter += 1
                 frame_counter = 0
                 break
-
+            
         cv2.putText(frame, "Blinks:{0}".format(blink_counter), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
         #cv2.putText(frame, "EAR:{:.2f}".format(ear), (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
-
+        cv2.putText(frame, 'leftEye: '+text, (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
 
     cv2.imshow("Frame", frame)
 
