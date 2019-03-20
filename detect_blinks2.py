@@ -47,13 +47,13 @@ shape_detector_path = 'shape_predictor_68_face_landmarks.dat'
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(shape_detector_path)
 
-# 导入模型
+# import model
 clf = joblib.load("ear_svm.m")
 
 clf2=joblib.load("single_eyes.m")
 
-EYE_AR_THRESH = 0.3# EAR阈值
-EYE_AR_CONSEC_FRAMES = 3# 当EAR小于阈值时，接连多少帧一定发生眨眼动作
+EYE_AR_THRESH = 0.3# EAR threshold 
+EYE_AR_CONSEC_FRAMES = 3# When EAR small that threshold, after 3 frames there will be a blink
 
 
 text =' '
